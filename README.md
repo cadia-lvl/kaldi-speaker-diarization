@@ -2,7 +2,7 @@
 
 This repository has speaker diarization recipes which work by copying them to the kaldi egs folder
 
-##Recipe towardsdatascience - v1/
+## Recipe towardsdatascience - v1/
 
 This recipe is based on [the speaker diarization guide at towardsdatascience.com](https://towardsdatascience.com/speaker-diarization-with-kaldi-e30301b05cc8) and [david's kaldi comment](https://github.com/kaldi-asr/kaldi/issues/2523#issuecomment-408935477). It also creates the data directory according to the data-prep instructions on the kaldi website.
 
