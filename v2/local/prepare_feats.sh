@@ -1,0 +1,1 @@
+../../../dihard_2018/v1/local/prepare_feats.sh

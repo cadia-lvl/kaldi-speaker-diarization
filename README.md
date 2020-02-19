@@ -10,3 +10,7 @@ The models within [the nnet_dir variable within run.sh](http://kaldi-asr.org/mod
 
 The recipe assumes you already have a data/train dir with audio files, wav.scp, and segments.
 It uses the files within data/train to create the remaining files needed for speaker diarization. The recipe scores through AHC to cluster speakers in an unsupervised manner.
+
+## Recipe dihard_2018 - v2/
+
+This recipe is based on the dihard_2018 v1 recipe but only uses the voxceleb1 dataset. This uses ivectors.
