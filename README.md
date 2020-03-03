@@ -1,6 +1,7 @@
 # kaldi-speaker-diarization
 
 This repository has speaker diarization recipes which work by copying them to the kaldi egs folder
+It is based off of this commit on Feb 5, 2020 : [321d3959dabf667ea73cc98881400614308ccbbb](https://github.com/kaldi-asr/kaldi/commit/321d3959dabf667ea73cc98881400614308ccbbb)
 
 # Data prep
 
