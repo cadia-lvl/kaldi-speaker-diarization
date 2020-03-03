@@ -12,8 +12,10 @@ This recipe is based on [the speaker diarization guide at towardsdatascience.com
 
 The models within [the nnet_dir variable within run.sh](http://kaldi-asr.org/models/m3) are from the kaldi website. nnet_dir symbolicly links to the exp directory within the m3 archive.
 
-The recipe assumes you already have a data/train dir with audio files, wav.scp, and segments.
-It uses the files within data/train to create the remaining files needed for speaker diarization. The recipe uses MFCCs, CMVN, x-vectors, PLDA, and scores through AHC to cluster speakers in an unsupervised manner.
+The recipe assumes you already have a data/train dir with audio files, wav.scp, utt2spk, and/or segments.
+It uses the files within data/train to create the remaining files needed for speaker diarization. The recipe uses MFCCs, CMVN, x-vectors, PLDA, and scores through AHC to cluster speakers in an unsupervised/supervised manner.
+
+It performs best on clear speech. A more robust SAD is needed, like chime6, if there is music or other noise.
 
 ## Recipe dihard_2018 - v2/
 
