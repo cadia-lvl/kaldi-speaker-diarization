@@ -6,6 +6,7 @@ It is based off of this commit on Feb 5, 2020 : [321d3959dabf667ea73cc9888140061
 # Data prep
 
 A data folder, perhaps data/train folder is required. Within is needed a wav.scp and the audio files should be in data. Audio files with a wav filetype is best but mp3s can be used if they're converted to wav during training.
+[templates.md](https://github.com/cadia-lvl/kaldi-speaker-diarization/tree/master/templates.md)
 
 ## Recipe towardsdatascience - v1/
 
