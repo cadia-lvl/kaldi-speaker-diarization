@@ -8,9 +8,8 @@
 #
 # See ../README.txt for more info on data required.
 # Results (diarization error rate) are inline in comments below.
-#SBATCH --nodelist=terra
 #SBATCH --output=logs/run_%J.out
-#SBATCH -c 25
+#SBATCH -c 5
 
 . ./cmd.sh
 . ./path.sh
@@ -24,7 +23,7 @@ ivector_dim=400
 ivec_dir=exp/extractor_c${num_components}_i${ivector_dim}
 
 
-stage=1
+stage=4
 
 if [ $stage -le 0 ]; then
   # Now prepare the VoxCeleb1 train and test data.  If you downloaded the corpus soon
@@ -44,6 +43,8 @@ if [ $stage -le 1 ]; then
       data/${name} exp/make_mfcc $mfccdir
     utils/fix_data_dir.sh data/${name}
   done
+fi
+if [ $stage -le 2 ]; then
 
   # Compute the energy-based VAD for train
   sid/compute_vad_decision.sh --nj 20 --cmd "$train_cmd" \
@@ -74,4 +75,38 @@ if [ $stage -le 1 ]; then
   # this with segments computed from your favorite SAD.
   diarization/vad_to_segments.sh --nj 20 --cmd "$train_cmd" \
       data/train_cmn data/train_cmn_segmented
+fi
+if [ $stage -le 3 ]; then
+  # Train the UBM on VoxCeleb 1
+  # UBM - Universal Background Model
+  sid/train_diag_ubm.sh --cmd "$train_cmd --mem 4G" \
+    --nj 40 --num-threads 8 \
+    data/train $num_components \
+    exp/diag_ubm
+
+  sid/train_full_ubm.sh --cmd "$train_cmd --mem 25G" \
+    --nj 40 --remove-low-count-gaussians false \
+    data/train \
+    exp/diag_ubm exp/full_ubm
+fi
+
+if [ $stage -le 4 ]; then
+  # In this stage, we train the i-vector extractor on a subset of VoxCeleb 1
+  #
+  # Note that there are well over 1 million utterances in our training set,
+  # and it takes an extremely long time to train the extractor on all of this.
+  # Also, most of those utterances are very short.  Short utterances are
+  # harmful for training the i-vector extractor.  Therefore, to reduce the
+  # training time and improve performance, we will only train on the 100k
+  # longest utterances.
+  # they trained on 100k, we're training on 5k so 5% of the data they had
+  utils/subset_data_dir.sh \
+    --utt-list <(sort -n -k 2 data/train/utt2num_frames | tail -n 5000) \
+    data/train data/train_5k
+
+  # Train the i-vector extractor.
+  sid/train_ivector_extractor.sh --cmd "$train_cmd --mem 3G" \
+    --ivector-dim $ivector_dim --num-iters 5 \
+    exp/full_ubm/final.ubm data/train_5k \
+    $ivec_dir
 fi
