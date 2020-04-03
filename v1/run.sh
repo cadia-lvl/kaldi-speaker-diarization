@@ -12,6 +12,7 @@ experiment=10
 traindir=data/train$experiment
 data_dir=data/train$experiment
 mfccdir=data/mfccs$experiment/
+m3_dir=exp/models/3
 nnet_dir=nnet_dir
 exp_cmn_dir=exp/cmvn$experiment
 data_cmn_dir=data/cmvn$experiment
@@ -20,21 +21,32 @@ segmented_dir=data/train${experiment}_segmented
 vaddir=data/vad${experiment}
 mkdir -p $data_cmn_dir
 mkdir -p $exp_cmn_dir
+mkdir -p $m3_dir
 
 threshold=0.5
 
 . ./cmd.sh
 . ./path.sh
 
+if [ ! -d "$m3_dir/0003_sre16_v2_1a" ]; then
+  echo -e "\nDownload pretrained models"
+  wget --no-check-certificate -P $m3_dir/ \
+    http://kaldi-asr.org/models/3/0003_sre16_v2_1a.tar.gz
+  tar -xvf $m3_dir/0003_sre16_v2_1a.tar.gz -C $m3_dir/
+  #symbolically link nnet_dir to the exp dir within the m3 archive
+  ln -s "${m3_dir}/0003_sre16_v2_1a/exp" nnet_dir
+fi
+
 if [ -f $traindir/segments ]; then
     echo -e "Presegmented data exists so using that"
     if [ $stage -le 0 ]; then
-        #train dir has wav.scp and segments file, creating utt2spk and reco2num_spk
+        #train dir has wav.scp, segments file, and/or reco2num_spk, creating utt2spk
         awk '{print $1, $2}' $traindir/segments > $traindir/utt2spk
         srun utils/utt2spk_to_spk2utt.pl $traindir/utt2spk > $traindir/spk2utt
-        cat $traindir/segments | awk '{ print $2 " 3"}' | sort -u > $traindir/reco2num_spk
+        #uncomment only if you have one audio file with 3 speakers
+        #cat $traindir/segments | awk '{ print $2 " 3"}' | sort -u > $traindir/reco2num_spk
 
-        utils/validate_data_dir.sh --no-feats $traindir
+        utils/validate_data_dir.sh --no-feats --no-text $traindir
         #use fix_data_dir.sh
         utils/fix_data_dir.sh $traindir
     fi
@@ -49,6 +61,10 @@ if [ -f $traindir/segments ]; then
          --cmd "$train_cmd" --write-utt2num-frames true \
          --write-utt2dur false \
          $data_dir exp/make_mfcc $mfccdir
+
+        utils/validate_data_dir.sh --no-feats --no-text $traindir
+        #use fix_data_dir.sh
+        utils/fix_data_dir.sh $traindir
     fi
     if [ $stage -le 2 ]; then
         echo -e "\nPerform Cepstral mean and variance normalization(CMVN)"
