@@ -21,4 +21,8 @@ It performs best on clear speech. A more robust SAD is needed, like chime6, if t
 
 ## Recipe dihard_2018 - v2/
 
-This recipe is based on the dihard_2018 v1 recipe but only uses the voxceleb1 dataset. This uses ivectors, UBM.
+This incomplete recipe is based on the dihard_2018 v1 recipe but only uses the voxceleb1 dataset. This uses ivectors, UBM.
+
+## Recipe callhome_diarizationv2 - v3/
+
+This is the callhome_diarizationv2 recipe using the pretrained models on kaldi-asr.org. This is very similar to the v1 recipe but has much better results for separating voices from other signals.
