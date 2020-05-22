@@ -148,3 +148,26 @@ if [ $stage -le 5 ]; then
     data/train_cmn_segmented_6400 $ivec_dir/ivectors_train_segmented_6400
 fi
 
+if [ $stage -le 6 ]; then
+  echo -e "Train a PLDA model on VoxCeleb1 train, using development set to whiten."
+  "$train_cmd" $ivec_dir/ivectors_dev_segmented/log/plda.log \
+    ivector-compute-plda ark:$ivec_dir/ivectors_train_segmented_6400/spk2utt \
+      "ark:ivector-subtract-global-mean \
+      scp:$ivec_dir/ivectors_train_segmented_6400/ivector.scp ark:- \
+      | transform-vec $ivec_dir/ivectors_dev_segmented/transform.mat ark:- ark:- \
+      | ivector-normalize-length ark:- ark:- |" \
+    $ivec_dir/ivectors_dev_segmented/plda || exit 1;
+fi
+
+# Perform PLDA scoring
+if [ $stage -le 7 ]; then
+  # Perform PLDA scoring on all pairs of segments for each recording.
+  diarization/score_plda.sh --cmd "$train_cmd --mem 4G" \
+    --nj 20 $ivec_dir/ivectors_dev_segmented $ivec_dir/ivectors_dev_segmented \
+    $ivec_dir/ivectors_dev_segmented/plda_scores
+
+  # TODO: perform PLDA scoring for eval set
+  # diarization/score_plda.sh --cmd "$train_cmd --mem 4G" \
+  #   --nj 20 $ivec_dir/ivectors_dev_segmented $ivec_dir/ivectors_eval_segmented \
+  #   $ivec_dir/ivectors_eval_segmented/plda_scores
+fi
