@@ -34,21 +34,21 @@ if [ ! -d "$m3_dir/0003_sre16_v2_1a" ]; then
     http://kaldi-asr.org/models/3/0003_sre16_v2_1a.tar.gz
   tar -xvf $m3_dir/0003_sre16_v2_1a.tar.gz -C $m3_dir/
   #symbolically link nnet_dir to the exp dir within the m3 archive
-  ln -s "${m3_dir}/0003_sre16_v2_1a/exp" nnet_dir
+  ln -sfn "${m3_dir}/0003_sre16_v2_1a/exp" nnet_dir
 fi
 
 if [ -f $traindir/segments ]; then
     echo -e "Presegmented data exists so using that"
     if [ $stage -le 0 ]; then
-        #train dir has wav.scp, segments file, and/or reco2num_spk, creating utt2spk
+        #experiment dir has wav.scp, segments file, and/or reco2num_spk, creating utt2spk
         awk '{print $1, $2}' $traindir/segments > $traindir/utt2spk
         srun utils/utt2spk_to_spk2utt.pl $traindir/utt2spk > $traindir/spk2utt
         #uncomment only if you have one audio file with 3 speakers
         #cat $traindir/segments | awk '{ print $2 " 3"}' | sort -u > $traindir/reco2num_spk
 
-        utils/validate_data_dir.sh --no-feats --no-text $traindir
         #use fix_data_dir.sh
         utils/fix_data_dir.sh $traindir
+        utils/validate_data_dir.sh --no-feats --no-text $traindir
     fi
     if [ $stage -le 1 ]; then
         echo -e "\nMake mfccs"
@@ -62,9 +62,9 @@ if [ -f $traindir/segments ]; then
          --write-utt2dur false \
          $data_dir exp/make_mfcc $mfccdir
 
-        utils/validate_data_dir.sh --no-feats --no-text $traindir
         #use fix_data_dir.sh
         utils/fix_data_dir.sh $traindir
+        utils/validate_data_dir.sh --no-feats --no-text $traindir
     fi
     if [ $stage -le 2 ]; then
         echo -e "\nPerform Cepstral mean and variance normalization(CMVN)"
@@ -144,7 +144,7 @@ fi
 if [ $stage -le 5 ]; then
     echo -e "\nUnsupervised AHC clustering"
     diarization/cluster.sh --cmd "$train_cmd --mem 4G" --nj 1 \
-     --threshold $threshold \
+     --threshold $threshold --rttm-channel 1\
      $xvectors_dir/plda_scores \
      $xvectors_dir/plda_scores_unsupervised_speakers
 
@@ -156,12 +156,12 @@ if [ $stage -le 6 ]; then
     if [ -f $data_dir/reco2num_spk ]; then
         echo -e "\nsupervised AHC clustering"
         diarization/cluster.sh --cmd "$train_cmd --mem 4G" --nj 1 \
-         --reco2num-spk $data_dir/reco2num_spk \
+         --reco2num-spk $data_dir/reco2num_spk --rttm-channel 1 \
          $xvectors_dir/plda_scores \
          $xvectors_dir/plda_scores_supervised_speakers
 
         s_num_spk=$(cat ${xvectors_dir}/plda_scores_supervised_speakers/rttm | awk '{ print $8 }' | sort -ru | wc | awk '{ print $1 }')
-        echo -e "\nThe supervised speakers estimate is $s_num_spk"
+        echo -e "\nThe oracle speakers estimate is $s_num_spk"
     fi
 
 fi
