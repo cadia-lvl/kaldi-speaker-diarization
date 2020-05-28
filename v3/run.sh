@@ -5,9 +5,10 @@
 #SBATCH -o logs/run-log.sout
 
 stage=0
+unsupervised=1
 
 experiment=1
-num_jobs=1
+num_jobs=2
 
 traindir=data/test$experiment
 data_dir=data/test$experiment
@@ -27,6 +28,7 @@ threshold=0.5
 
 . ./cmd.sh
 . ./path.sh
+set -e
 
 if [ ! -d "$model_dir/0006_callhome_diarization_v2_1a" ]; then
   echo -e "\nDownload pretrained models"
@@ -38,7 +40,6 @@ if [ ! -d "$model_dir/0006_callhome_diarization_v2_1a" ]; then
   ln -sfn "${model_dir}/0006_callhome_diarization_v2_1a/conf/" conf
 fi
 
-echo -e "This script assumes that you're only diarizing one file"
 if [ -f $traindir/segments ]; then
     echo -e "Presegmented data exists so using that"
     if [ $stage -le 0 ]; then
@@ -48,9 +49,9 @@ if [ -f $traindir/segments ]; then
         #uncomment only if you have one audio file with 3 speakers
         #cat $traindir/segments | awk '{ print $2 " 3"}' | sort -u > $traindir/reco2num_spk
 
-        utils/validate_data_dir.sh --no-feats --no-text $traindir
         #use fix_data_dir.sh
         utils/fix_data_dir.sh $traindir
+        utils/validate_data_dir.sh --no-feats --no-text $traindir
     fi
     if [ $stage -le 1 ]; then
         echo -e "\nMake mfccs"
@@ -64,9 +65,9 @@ if [ -f $traindir/segments ]; then
          --write-utt2dur false \
          $data_dir exp/make_mfcc $mfccdir
 
-        utils/validate_data_dir.sh --no-feats --no-text $traindir
         #use fix_data_dir.sh
         utils/fix_data_dir.sh $traindir
+        utils/validate_data_dir.sh --no-feats --no-text $traindir
     fi
     if [ $stage -le 2 ]; then
         echo -e "\nPerform Cepstral mean and variance normalization(CMVN)"
@@ -81,6 +82,8 @@ else
     if [ $stage -le 0 ]; then
         #there is a wav.scp file, utt2spk, and reco2num_spk
         srun utils/utt2spk_to_spk2utt.pl $traindir/utt2spk > $traindir/spk2utt
+
+        utils/fix_data_dir.sh $data_dir
     fi
     if [ $stage -le 1 ]; then
         echo -e "\nMake mfccs"
@@ -124,9 +127,8 @@ if [ $stage -le 3 ]; then
     cp $data_dir/feats.scp $data_cmn_dir/
     mkdir -p $xvectors_dir
 
-    #NOTE nj is 1 because currently only giving it one speaker
-    #each speaker can be split into at most 1 job
-    #so jobs needs to be <= num_speakers
+    # NOTE each speaker can be split into at most 1 job
+    # so jobs(nj) needs to be <= num_speakers
     diarization/nnet3/xvector/extract_xvectors.sh --cmd \
      "$train_cmd --mem 5G" \
      --nj ${num_jobs} --window 1.5 --period 0.75 --apply-cmn false \
@@ -139,14 +141,14 @@ if [ $stage -le 4 ]; then
     mkdir -p $xvectors_dir/plda_scores
 
    diarization/nnet3/xvector/score_plda.sh \
-    --cmd "$train_cmd --mem 4G" \
+    --cmd "$train_cmd --mem 4G" --cleanup true \
     --target-energy 0.9 --nj ${num_jobs} $nnet_dir/xvector_nnet_1a/xvectors_callhome2 \
     $xvectors_dir $xvectors_dir/plda_scores 
 fi
-if [ $stage -le 5 ]; then
+if [[ $stage -le 5 && $unsupervised -eq 1 ]]; then
     echo -e "\nUnsupervised AHC clustering"
     diarization/cluster.sh --cmd "$train_cmd --mem 4G" --nj ${num_jobs} \
-     --threshold $threshold \
+     --threshold $threshold --rttm-channel 1 --cleanup true \
      $xvectors_dir/plda_scores \
      $xvectors_dir/plda_scores_unsupervised_speakers
 
@@ -158,7 +160,7 @@ if [ $stage -le 6 ]; then
     if [ -f $data_dir/reco2num_spk ]; then
         echo -e "\nsupervised AHC clustering"
         diarization/cluster.sh --cmd "$train_cmd --mem 4G" --nj ${num_jobs} \
-         --reco2num-spk $data_dir/reco2num_spk \
+         --reco2num-spk $data_dir/reco2num_spk --rttm-channel 1 --cleanup true \
          $xvectors_dir/plda_scores \
          $xvectors_dir/plda_scores_supervised_speakers
 
