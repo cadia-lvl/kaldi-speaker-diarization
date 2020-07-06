@@ -73,7 +73,7 @@ for dataset in ruvdi1 ruvdi2 ruvdi3; do
   utils/filter_scp.pl $data_dir/$dataset/wav.scp $data_dir/ruvdi/reco2num_spk \
     > $data_dir/$dataset/reco2num_spk
   utils/filter_scp.pl -f 2 $data_dir/$dataset/wav.scp \
-    $data_dir/ruvdi/fullref.rttm > $data_dir/$dataset/rttm
+    $data_dir/ruvdi/full_ref.rttm > $data_dir/$dataset/rttm
 done
 
 rm $data_dir/ruvdi/segments || exit 1;
