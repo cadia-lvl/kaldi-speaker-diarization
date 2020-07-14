@@ -3,7 +3,9 @@
 # Apache 2.0
 #
 # See ../README.txt for more info on data required.
-# Results (diarization error rate) are inline in comments below.
+# This recipe is based off of the callhome_diarization/v2 recipe.
+# Results (diarization error rate) are inline in comments below with unscored
+# collars and not including overlapping speech.
 #SBATCH --output=logs/run_%J.out
 #SBATCH --nodelist=terra
 #SBATCH -c 5
@@ -19,7 +21,7 @@ rirs_root=RIRS_NOISES
 ruvdi_root=data/corpus/
 althingi_root=Althingi_Parliamentary_Speeches
 num_jobs=5
-stage=4
+stage=0
 nnet_dir=exp/xvector_nnet_1a/
 num_components=1024 # the number of UBM components (used for VB resegmentation)
 ivector_dim=400 # also used for VB resegmentation
@@ -202,12 +204,12 @@ local/nnet3/xvector/tuning/run_xvector_1a.sh --stage $stage --train-stage -1 \
 if [ $stage -le 7 ]; then
   echo -e "Extract x-vectors for the two partitions of ruv-di."
   diarization/nnet3/xvector/extract_xvectors.sh --cmd "$train_cmd --mem 5G" \
-    --nj 40 --window 1.5 --period 0.75 --apply-cmn false \
+    --nj ${num_jobs} --window 1.5 --period 0.75 --apply-cmn false \
     --min-segment 0.5 $nnet_dir \
     data/ruvdi1_cmn $nnet_dir/xvectors_ruvdi1
 
   diarization/nnet3/xvector/extract_xvectors.sh --cmd "$train_cmd --mem 5G" \
-    --nj 40 --window 1.5 --period 0.75 --apply-cmn false \
+    --nj ${num_jobs} --window 1.5 --period 0.75 --apply-cmn false \
     --min-segment 0.5 $nnet_dir \
     data/ruvdi2_cmn $nnet_dir/xvectors_ruvdi2
 
@@ -217,7 +219,138 @@ if [ $stage -le 7 ]; then
   # data.  A long period is used here so that we don't compute too
   # many x-vectors for each recording.
   diarization/nnet3/xvector/extract_xvectors.sh --cmd "$train_cmd --mem 10G" \
-    --nj 40 --window 3.0 --period 10.0 --min-segment 1.5 --apply-cmn false \
+    --nj ${num_jobs} --window 3.0 --period 10.0 --min-segment 1.5 --apply-cmn false \
     --hard-min true $nnet_dir \
     data/train_cmn_segmented_128k $nnet_dir/xvectors_train_segmented_128k
+fi
+
+# Train PLDA models
+if [ $stage -le 8 ]; then
+  # Train a PLDA model on train, using ruvdi1 to whiten.
+  # We will later use this to score x-vectors in ruvdi2.
+  "$train_cmd" $nnet_dir/xvectors_ruvdi1/log/plda.log \
+    ivector-compute-plda ark:$nnet_dir/xvectors_train_segmented_128k/spk2utt \
+      "ark:ivector-subtract-global-mean \
+      scp:$nnet_dir/xvectors_train_segmented_128k/xvector.scp ark:- \
+      | transform-vec $nnet_dir/xvectors_ruvdi1/transform.mat ark:- ark:- \
+      | ivector-normalize-length ark:- ark:- |" \
+    $nnet_dir/xvectors_ruvdi1/plda || exit 1;
+
+  # Train a PLDA model on SRE, using ruvdi2 to whiten.
+  # We will later use this to score x-vectors in ruvdi1.
+  "$train_cmd" $nnet_dir/xvectors_ruvdi2/log/plda.log \
+    ivector-compute-plda ark:$nnet_dir/xvectors_train_segmented_128k/spk2utt \
+      "ark:ivector-subtract-global-mean \
+      scp:$nnet_dir/xvectors_train_segmented_128k/xvector.scp ark:- \
+      | transform-vec $nnet_dir/xvectors_ruvdi2/transform.mat ark:- ark:- \
+      | ivector-normalize-length ark:- ark:- |" \
+    $nnet_dir/xvectors_ruvdi2/plda || exit 1;
+fi
+
+# Perform PLDA scoring
+if [ $stage -le 9 ]; then
+  # Perform PLDA scoring on all pairs of segments for each recording.
+  # The first directory contains the PLDA model that used ruvdi2
+  # to perform whitening (recall that we're treating ruvdi2 as a
+  # held-out dataset).  The second directory contains the x-vectors
+  # for ruvdi1.
+  diarization/nnet3/xvector/score_plda.sh --cmd "$train_cmd --mem 4G" \
+    --nj ${num_jobs} $nnet_dir/xvectors_ruvdi2 $nnet_dir/xvectors_ruvdi1 \
+    $nnet_dir/xvectors_ruvdi1/plda_scores
+
+  # Do the same thing for ruvdi2.
+  diarization/nnet3/xvector/score_plda.sh --cmd "$train_cmd --mem 4G" \
+    --nj ${num_jobs} $nnet_dir/xvectors_ruvdi1 $nnet_dir/xvectors_ruvdi2 \
+    $nnet_dir/xvectors_ruvdi2/plda_scores
+fi
+
+# Cluster the PLDA scores using a stopping threshold.
+if [ $stage -le 10 ]; then
+  # First, we find the threshold that minimizes the DER on each partition of
+  # ruvdi.
+  mkdir -p $nnet_dir/tuning
+  for dataset in ruvdi1 ruvdi2; do
+    echo "Tuning clustering threshold for $dataset"
+    best_der=100
+    best_threshold=0
+    utils/filter_scp.pl -f 2 data/$dataset/wav.scp \
+      data/ruvdi/full_ref.rttm > data/$dataset/ref.rttm
+
+    # The threshold is in terms of the log likelihood ratio provided by the
+    # PLDA scores.  In a perfectly calibrated system, the threshold is 0.
+    # In the following loop, we evaluate the clustering on a heldout dataset
+    # (ruvdi1 is heldout for ruvdi2 and vice-versa) using some reasonable
+    # thresholds for a well-calibrated system.
+    for threshold in -0.3 -0.2 -0.1 -0.05 0 0.05 0.1 0.2 0.3; do
+      diarization/cluster.sh --cmd "$train_cmd --mem 4G" --nj ${num_jobs} \
+        --threshold $threshold --rttm-channel 1 $nnet_dir/xvectors_$dataset/plda_scores \
+        $nnet_dir/xvectors_$dataset/plda_scores_t$threshold
+
+      if [ ! -f md-eval.pl ]; then
+        echo "md-eval.pl was not found, downloading it."
+        local/download_md-eval.sh
+      fi
+      md-eval.pl -1 -c 0.25 -r data/$dataset/ref.rttm \
+       -s $nnet_dir/xvectors_$dataset/plda_scores_t$threshold/rttm \
+       2> $nnet_dir/tuning/${dataset}_t${threshold}.log \
+       > $nnet_dir/tuning/${dataset}_t${threshold}
+
+      der=$(grep -oP 'DIARIZATION\ ERROR\ =\ \K[0-9]+([.][0-9]+)?' \
+        $nnet_dir/tuning/${dataset}_t${threshold})
+      if [ $(perl -e "print ($der < $best_der ? 1 : 0);") -eq 1 ]; then
+        best_der=$der
+        best_threshold=$threshold
+      fi
+    done
+    echo "$best_threshold" > $nnet_dir/tuning/${dataset}_best
+  done
+
+  # Cluster ruvdi1 using the best threshold found for ruvdi2.  This way,
+  # ruvdi2 is treated as a held-out dataset to discover a reasonable
+  # stopping threshold for ruvdi1.
+  diarization/cluster.sh --cmd "$train_cmd --mem 4G" --nj ${num_jobs} \
+    --threshold $(cat $nnet_dir/tuning/ruvdi2_best) --rttm-channel 1 \
+    $nnet_dir/xvectors_ruvdi1/plda_scores $nnet_dir/xvectors_ruvdi1/plda_scores
+
+  # Do the same thing for ruvdi2, treating ruvdi1 as a held-out dataset
+  # to discover a stopping threshold.
+  diarization/cluster.sh --cmd "$train_cmd --mem 4G" --nj ${num_jobs} \
+    --threshold $(cat $nnet_dir/tuning/ruvdi1_best) --rttm-channel 1 \
+    $nnet_dir/xvectors_ruvdi2/plda_scores $nnet_dir/xvectors_ruvdi2/plda_scores
+
+  mkdir -p $nnet_dir/results
+  # Now combine the results for ruvdi1 and ruvdi2 and evaluate it
+  # together.
+  cat $nnet_dir/xvectors_ruvdi1/plda_scores/rttm \
+    $nnet_dir/xvectors_ruvdi2/plda_scores/rttm | md-eval.pl -1 -c 0.25 -r \
+    data/ruvdi/full_ref.rttm -s - 2> $nnet_dir/results/threshold.log \
+    > $nnet_dir/results/DER_threshold.txt
+  der=$(grep -oP 'DIARIZATION\ ERROR\ =\ \K[0-9]+([.][0-9]+)?' \
+    $nnet_dir/results/DER_threshold.txt)
+  # Using supervised calibration, DER: 25.23%
+  echo "Using supervised calibration, DER: $der%"
+fi
+
+# Cluster the PLDA scores using the oracle number of speakers
+if [ $stage -le 11 ]; then
+  # In this section, we show how to do the clustering if the number of speakers
+  # (and therefore, the number of clusters) per recording is known in advance.
+  diarization/cluster.sh --cmd "$train_cmd --mem 4G" \
+    --reco2num-spk data/ruvdi1/reco2num_spk --rttm-channel 1 \
+    $nnet_dir/xvectors_ruvdi1/plda_scores $nnet_dir/xvectors_ruvdi1/plda_scores_num_spk
+
+  diarization/cluster.sh --cmd "$train_cmd --mem 4G" \
+    --reco2num-spk data/ruvdi2/reco2num_spk --rttm-channel 1 \
+    $nnet_dir/xvectors_ruvdi2/plda_scores $nnet_dir/xvectors_ruvdi2/plda_scores_num_spk
+
+  mkdir -p $nnet_dir/results
+  # Now combine the results for ruvdi1 and ruvdi2 and evaluate it together.
+  cat $nnet_dir/xvectors_ruvdi1/plda_scores_num_spk/rttm \
+  $nnet_dir/xvectors_ruvdi2/plda_scores_num_spk/rttm \
+    | md-eval.pl -1 -c 0.25 -r data/ruvdi/full_ref.rttm -s - 2> $nnet_dir/results/num_spk.log \
+    > $nnet_dir/results/DER_num_spk.txt
+  der=$(grep -oP 'DIARIZATION\ ERROR\ =\ \K[0-9]+([.][0-9]+)?' \
+    $nnet_dir/results/DER_num_spk.txt)
+  # Using the oracle number of speakers, DER: 21.50%
+  echo "Using the oracle number of speakers, DER: $der%"
 fi

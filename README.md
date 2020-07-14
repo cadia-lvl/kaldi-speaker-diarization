@@ -37,20 +37,21 @@ This incomplete recipe is based on the dihard_2018 v1 recipe but only uses the v
 
 This is the callhome_diarizationv2 recipe using the pretrained models on kaldi-asr.org. This is very similar to the v1 recipe but has much better results for separating voices from other signals.
 Run setup.sh beforehand to setup the necessary directories or symbolic links.
+`run.sh` expects data to be in data/test1/. It expects the following files: wav.scp, utt2spk(, segments, and reco2num_spk). The ones in parentheses are optional.
 
 DER of each icelandic data we have (no unscored collars, includes overlapping data)
 ----------------------------------------------------------------------------
 |            | default threshold (0.5) | oracle speakers | tuned threshold |
 |------------|-------------------------|-----------------|-----------------|
-| Teenage    |                         |     70.33%      |                 |
-| Ruvdiw/SAD |          31.77%         |     30.35%      |    N/A          |
-| Ruvdi      |          29.89%         |   **27.81%**    |    N/A          |
-| Ruvdi eval |          34.30%         |     30.45%      |                 |
+| Teenage    |          71.72%         |     70.33%      |   100%(0.6)     |
+| Ruvdiw/SAD |          31.77%         |     30.35%      |   N/A           |
+| Ruvdi      |          29.89%         |     27.81%      |   N/A           |
+| Ruvdi eval |          34.30%         |     30.45%      |   32.33%(0.6)   |
 | ALL eval   |                         |                 |                 |
 | ALL        |                         |                 |    N/A          |
 ----------------------------------------------------------------------------
 
-## Recipe Ruv-di - v4/
+## Recipe Ruv-di ivectors- v4/
 
 This recipe is based on the Icelandic Ruv-di corpus. The corpus is currently not published yet. It uses MFCCs, i-Vectors, PLDA and AHC.
 Run setup.sh beforehand to setup the necessary directories or symbolic links.
@@ -64,3 +65,15 @@ DER
 | ALL  eval   |        N/A        |                 |                 |
 -----------------------------------------------------------------------
 
+## Recipe Ruv-di xvectors - v5/
+
+This recipe is trained on the [Althingi Parliamentary Speech corpus on malfong.is](http://www.malfong.is/index.php?lang=en&pg=althingisraedur). The recipe uses the Icelandic Ruv-di corpus as two hold out sets. The corpus is currently not published yet. It uses MFCCS, xvectors, PLDA and AHC.
+Run setup.sh beforehand to setup the necessary directories or symbolic links.
+
+DER
+|             | default threshold | oracle speakers | tuned threshold |
+|-------------|-------------------|-----------------|-----------------|
+| Teenage     |        N/A        |                 |                 |
+| Ruvdi       |        N/A        |    **22.58%**   |   26.27%        |
+| Ruvdi eval  |        N/A        |      24.31%     |   23.37%        |
+| ALL  eval   |        N/A        |                 |                 |
