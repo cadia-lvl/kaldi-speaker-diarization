@@ -74,6 +74,6 @@ DER
 |             | default threshold | oracle speakers | tuned threshold |
 |-------------|-------------------|-----------------|-----------------|
 | Teenage     |        N/A        |                 |                 |
-| Ruvdi       |        N/A        |    **22.58%**   |   26.27%        |
-| Ruvdi eval  |        N/A        |      24.31%     |   23.37%        |
+| Ruvdi       |        N/A        |    **22.58%**   |  26.27%         |
+| Ruvdi eval  |        N/A        |      24.31%     |  23.37%(-0.05)  |
 | ALL  eval   |        N/A        |                 |                 |
