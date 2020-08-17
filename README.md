@@ -3,12 +3,15 @@
 This repository has speaker diarization recipes which work by copying them to the kaldi egs folder.
 It is based off of this kaldi commit on Feb 5, 2020 : [321d3959dabf667ea73cc98881400614308ccbbb](https://github.com/kaldi-asr/kaldi/commit/321d3959dabf667ea73cc98881400614308ccbbb)
 
-The DER is obtained using the [DIHARD 2018 script - md-eval-22.pl](https://github.com/nryant/dscore).
+There are two types of recipes here: pre-trained (v1 & v3) and train (v4 & v5) recipes.
+If you want the pretrained models & their config files for v4 or v5, please contact judy at judyfong@ru.is.
+
+The DER is obtained using the [DIHARD 2018 script - md-eval-22.pl](https://github.com/nryant/dscore). All DERs within this README are have no unscored collars and include overlapping speech.
 
 # Data prep
 
-A data folder, perhaps data/train folder is required. Within is needed a wav.scp and the audio files should be in data. Audio files with a wav filetype is best but mp3s can be used if they're converted to wav during training.
-[templates.md](https://github.com/cadia-lvl/kaldi-speaker-diarization/tree/master/templates.md)
+A data folder, perhaps data/train, is required. The directory name varies by recipe. Within a wav.scp is needed which contains the path to the audio files. Audio files with a wav filetype is best but mp3s can be used if they're converted to single channel 8k wav. Audio files should have more than one speaker where the speech doesn't overlap too much.
+Read [templates.md](https://github.com/cadia-lvl/kaldi-speaker-diarization/tree/master/templates.md) to make sure the required ids match up. It clears up some confusing filename conventions.
 
 ## Recipe towardsdatascience - v1/
 
@@ -16,7 +19,17 @@ This recipe is based on [the speaker diarization guide at towardsdatascience.com
 
 The [models](http://kaldi-asr.org/models/m3) used are from the kaldi website.
 
-The recipe assumes you already have a data/train dir with audio files, wav.scp, utt2spk, reco2num_spk, and/or segments.
+#### Minimum requirements
+The recipe assumes you already have a data/train10 dir.
+
+The directory needs these files to diarize an audio file:
+* an audio file,
+* wav.scp, and
+* utt2spk.
+
+#### Optional:
+* reco2num_spk
+* segments.
 It uses the files within data/test to create the remaining files needed for speaker diarization. The recipe uses MFCCs, CMVN, x-vectors, PLDA, and scores through AHC to cluster speakers in an unsupervised/supervised manner.
 
 It performs best on clear speech. A more robust SAD is needed, like chime6, if there is music or other noise.

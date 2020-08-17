@@ -17,4 +17,4 @@ Templates for the various files which need to be prepared before creating diariz
 ## rttm
 `SPEAKER <recording-id> <channel> <start-time> <duration> <NA> <NA> <speaker-number> <NA> <NA>`
 
-If the recording ID in utt2spk and reco2num_spk don't match then an error comes up during AHC. All the utterance IDs must be of the same length or it can cause errors in the rttm file.
+If the recording ID in utt2spk and reco2num_spk don't match then an error comes up during AHC. All the utterance IDs must be of the same length or it can cause errors in the rttm file. While the filename utt2spk implies it matches utterance ids to speaker ids, within diarization recipes it just matches utterance ids to recording ids. A better filename would be utt2reco but it's not since we're building on top of automatic speech recognition(ASR) tools.
