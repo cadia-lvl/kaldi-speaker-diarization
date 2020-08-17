@@ -8,7 +8,7 @@ stage=0
 unsupervised=1
 
 experiment=1
-num_jobs=2
+num_jobs=1
 
 traindir=data/test$experiment
 data_dir=data/test$experiment
