@@ -1,12 +1,12 @@
 # kaldi-speaker-diarization
 
-This repository has speaker diarization recipes which work by copying them to the kaldi egs folder.
+This repository has speaker diarization recipes which work by git cloning them into the kaldi egs folder.
 It is based off of this kaldi commit on Feb 5, 2020 : [321d3959dabf667ea73cc98881400614308ccbbb](https://github.com/kaldi-asr/kaldi/commit/321d3959dabf667ea73cc98881400614308ccbbb)
 
 There are two types of recipes here: pre-trained (v1 & v3) and train (v4 & v5) recipes.
 If you want the pretrained models & their config files for v4 or v5, please contact judy at judyfong@ru.is.
 
-The DER is obtained using the [DIHARD 2018 script - md-eval-22.pl](https://github.com/nryant/dscore). All DERs within this README are have no unscored collars and include overlapping speech.
+The DER is obtained using the [DIHARD 2018 script - md-eval-22.pl](https://github.com/nryant/dscore) which can also be installed and setup using kaldi/tools dependencies (sctk). All DERs within this README have no unscored collars and include overlapping speech.
 
 # Data prep
 

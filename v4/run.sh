@@ -111,6 +111,8 @@ if [ $stage -le 4 ]; then
     data/train data/train_900
 
   # Train the i-vector extractor.
+  # The follow equation needs to be true to avoid an error
+  # nj * num-processes <= number of audio files
   sid/train_ivector_extractor.sh --cmd "$train_cmd --mem 3G" \
     --ivector-dim $ivector_dim --num-iters 5 --nj 5 --num-processes 2\
     exp/full_ubm/final.ubm data/train_900 \
