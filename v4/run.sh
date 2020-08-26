@@ -112,7 +112,7 @@ if [ $stage -le 4 ]; then
 
   # Train the i-vector extractor.
   sid/train_ivector_extractor.sh --cmd "$train_cmd --mem 3G" \
-    --ivector-dim $ivector_dim --num-iters 5 --nj 5\
+    --ivector-dim $ivector_dim --num-iters 5 --nj 5 --num-processes 2\
     exp/full_ubm/final.ubm data/train_900 \
     $ivec_dir
 fi
