@@ -286,10 +286,6 @@ if [ $stage -le 10 ]; then
         --threshold $threshold --rttm-channel 1 $nnet_dir/xvectors_$dataset/plda_scores \
         $nnet_dir/xvectors_$dataset/plda_scores_t$threshold
 
-      if [ ! -f md-eval.pl ]; then
-        echo "md-eval.pl was not found, downloading it."
-        local/download_md-eval.sh
-      fi
       md-eval.pl -1 -c 0.25 -r data/$dataset/ref.rttm \
        -s $nnet_dir/xvectors_$dataset/plda_scores_t$threshold/rttm \
        2> $nnet_dir/tuning/${dataset}_t${threshold}.log \
