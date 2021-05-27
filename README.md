@@ -4,7 +4,8 @@ This repository has speaker diarization recipes which work by git cloning them i
 It is based off of this kaldi commit on Feb 5, 2020 : [321d3959dabf667ea73cc98881400614308ccbbb](https://github.com/kaldi-asr/kaldi/commit/321d3959dabf667ea73cc98881400614308ccbbb)
 
 There are two types of recipes here: pre-trained (v1 & v3) and train (v4 & v5) recipes.
-If you want the pretrained models & their config files for v4 or v5, please contact judy at judyfong@ru.is.
+The v5 pretrained models and their config files are available at repository.clarin.is: [https://repository.clarin.is/repository/xmlui/handle/20.500.12537/109](https://repository.clarin.is/repository/xmlui/handle/20.500.12537/109).
+If you want the v4 pretrained models & their config files, please contact judy at judyfong@ru.is.
 
 The DER is obtained using the [DIHARD 2018 script - md-eval-22.pl](https://github.com/nryant/dscore) which can also be installed and setup using kaldi/tools dependencies (sctk). All DERs within this README have no unscored collars and include overlapping speech.
 
@@ -76,8 +77,10 @@ DER
 
 ## Recipe Ruv-di xvectors - v5/
 
-This recipe is trained on the [Althingi Parliamentary Speech corpus on malfong.is](http://www.malfong.is/index.php?lang=en&pg=althingisraedur). The recipe uses the Icelandic Ruv-di corpus as two hold out sets. The corpus is currently not published yet. It uses MFCCS, xvectors, PLDA and AHC.
+This recipe is trained on the [Althingi Parliamentary Speech corpus on malfong.is](http://www.malfong.is/index.php?lang=en&pg=althingisraedur). The recipe uses the Icelandic Ruv-di corpus as two hold out sets. The Rúv-di corpus is currently not published yet. It uses MFCCS, xvectors, PLDA and AHC.
 Run setup.sh beforehand to setup the necessary directories or symbolic links.
+
+The v5 pretrained models and their config files are available at repository.clarin.is: [https://repository.clarin.is/repository/xmlui/handle/20.500.12537/109](https://repository.clarin.is/repository/xmlui/handle/20.500.12537/109).
 
 DER
 |             | default threshold | oracle speakers | tuned threshold |
@@ -86,3 +89,14 @@ DER
 | Ruvdi       |        N/A        |    **22.58%**   |  26.27%         |
 | Ruvdi eval  |        N/A        |      24.31%     |  23.37%(-0.05)  |
 | ALL  eval   |        N/A        |                 |                 |
+
+# References
+```
+ @misc{20.500.12537/109,
+ title = {{R{\'U}V}-{DI} Speaker Diarization v5 models},
+ author = {Fong, Judy Y and Gudnason, Jon},
+ url = {http://hdl.handle.net/20.500.12537/109},
+ note = {{CLARIN}-{IS}},
+ copyright = {Creative Commons - Attribution 4.0 International ({CC} {BY} 4.0)},
+ year = {2021} }
+```
