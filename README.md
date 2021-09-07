@@ -3,7 +3,7 @@
 This repository has speaker diarization recipes which work by git cloning them into the kaldi egs folder.
 It is based off of this kaldi commit on Feb 5, 2020 : [321d3959dabf667ea73cc98881400614308ccbbb](https://github.com/kaldi-asr/kaldi/commit/321d3959dabf667ea73cc98881400614308ccbbb)
 
-There are two types of recipes here: pre-trained (v1 & v3) and train (v4 & v5) recipes.
+There are two types of recipes here: pre-trained (v1, v3, v5_decode) and train (v4 & v5) recipes.
 The v5 pretrained models and their config files are available at repository.clarin.is: [https://repository.clarin.is/repository/xmlui/handle/20.500.12537/109](https://repository.clarin.is/repository/xmlui/handle/20.500.12537/109).
 If you want the v4 pretrained models & their config files, please contact judy at judyfong@ru.is.
 
@@ -89,6 +89,10 @@ DER
 | Ruvdi       |        N/A        |    **22.58%**   |  26.27%         |
 | Ruvdi eval  |        N/A        |      24.31%     |  23.37%(-0.05)  |
 | ALL  eval   |        N/A        |                 |                 |
+
+## Decoding Recipe Ruv-di xvectors - v5_decode/
+
+This recipe uses the [pretained models](http://hdl.handle.net/20.500.12537/109) from ruv-di v5 and diarizes unseen audio files.
 
 # References
 ```
