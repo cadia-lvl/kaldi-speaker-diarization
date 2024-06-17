@@ -5,7 +5,7 @@ It is based off of this kaldi commit on Feb 5, 2020 : [321d3959dabf667ea73cc9888
 
 There are two types of recipes here: pre-trained (v1, v3, v5_decode) and train (v4 & v5) recipes.
 The v5 pretrained models and their config files are available at repository.clarin.is: [https://repository.clarin.is/repository/xmlui/handle/20.500.12537/109](https://repository.clarin.is/repository/xmlui/handle/20.500.12537/109).
-If you want the v4 pretrained models & their config files, please contact judy at judyfong@ru.is.
+If you want the v4 pretrained models & their config files, please contact judy at lvl@judyyfong.xyz.
 
 The DER is obtained using the [DIHARD 2018 script - md-eval-22.pl](https://github.com/nryant/dscore) which can also be installed and setup using kaldi/tools dependencies (sctk). All DERs within this README have no unscored collars and include overlapping speech.
 
