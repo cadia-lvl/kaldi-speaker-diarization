@@ -77,7 +77,7 @@ DER
 
 ## Recipe Ruv-di xvectors - v5/
 
-This recipe is trained on the [Althingi Parliamentary Speech corpus on malfong.is](http://www.malfong.is/index.php?lang=en&pg=althingisraedur). The recipe uses the Icelandic Ruv-di corpus as two hold out sets. The Rúv-di corpus is currently not published yet. It uses MFCCS, xvectors, PLDA and AHC.
+This recipe is trained on the [Althingi Parliamentary Speech corpus, LDC version][(http://www.malfong.is/index.php?lang=en&pg=althingisraedur)](https://catalog.ldc.upenn.edu/LDC2021S01). The recipe uses the Icelandic Ruv-di corpus as two hold out sets. The Rúv-di corpus is currently not published yet and due to a cyberattack at Reykjavík University may never be published. It uses MFCCS, xvectors, PLDA and AHC.
 Run setup.sh beforehand to setup the necessary directories or symbolic links.
 
 The v5 pretrained models and their config files are available at repository.clarin.is: [https://repository.clarin.is/repository/xmlui/handle/20.500.12537/109](https://repository.clarin.is/repository/xmlui/handle/20.500.12537/109).
